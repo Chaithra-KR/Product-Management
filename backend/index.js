@@ -1,13 +1,31 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const PORT = 5000;
+const versionOne = require("./versions/v1");
+require("dotenv").config();
+const cors = require("cors");
+const bp = require("body-parser");
+const cp = require("cookie-parser");
+const mongoose = require("mongoose");
+const globalErrorHandler = require("./middleware/errorHandler");
 
 app.use(express.json());
 
-app.get('/', (req, res) => {
-    res.send('Backend is running...');
-});
+app.use(cors());
+app.use(bp.json());
+app.use(cp());
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+mongoose
+  .connect(process.env.DBC)
+  .then(() => {
+    console.log("DB-CONNECTED");
+  })
+  .catch((err) => {
+    console.log(err?.message);
+  });
+app.use("/api/v1", versionOne);
+
+app.use(globalErrorHandler);
+
+app.listen(process.env.PORT, () => {
+  console.log(`Port ${process.env.PORT} is running now`);
 });
