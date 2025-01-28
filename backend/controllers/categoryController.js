@@ -5,7 +5,7 @@ const addCategory = async (req, res, next) => {
   try {
     const { name } = req.body;
 
-    // Check if the email already exists
+    // Check if the category already exists
     const existingCategory = await category.findOne({ name });
     if (existingCategory) {
       return next(new AppError(`${name} category is already exist`, 400));
