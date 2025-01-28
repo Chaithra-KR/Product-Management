@@ -1,3 +1,4 @@
+const APIFeatures = require("../config/apiFeatures");
 const AppError = require("../config/AppError");
 const subCategory = require("../models/subCategory");
 
@@ -5,11 +6,16 @@ const addSubCategory = async (req, res, next) => {
   try {
     const { name, categoryId } = req.body;
 
+    // Validate input fields
+    if (!name || !categoryId) {
+      return next(new AppError("Name and categoryId are required fields", 400));
+    }
+
     // Check if the subcategory already exists
     const existingSubCategory = await subCategory.findOne({ name });
     if (existingSubCategory) {
       return next(
-        new AppError(`${name} named subcategory is already exist`, 400)
+        new AppError(`${name} named subcategory already exists`, 400)
       );
     }
 
@@ -35,9 +41,36 @@ const addSubCategory = async (req, res, next) => {
   }
 };
 
+// const getAllSubCategories = async (req, res, next) => {
+//   try {
+//     const subCategories = await subCategory.find().populate("category")
+
+//     if (!subCategories || subCategories.length === 0) {
+//       return next(new AppError("No subcategories found.", 404));
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Subcategories retrieved successfully",
+//       data: subCategories,
+//     });
+//   } catch (error) {
+//     next(new AppError("Failed to fetch categories", 500));
+//   }
+// };
 const getAllSubCategories = async (req, res, next) => {
   try {
-    const subCategories = await category.find();
+    // Initialize APIFeatures with SubCategory model, query, and query string
+    const apiFeatures = new APIFeatures(
+      subCategory,
+      subCategory.find().populate("category"),
+      req.query
+    )
+      .filter()
+      .sort()
+      .paginate();
+
+    const subCategories = await apiFeatures.query;
 
     if (!subCategories || subCategories.length === 0) {
       return next(new AppError("No subcategories found.", 404));
@@ -49,8 +82,7 @@ const getAllSubCategories = async (req, res, next) => {
       data: subCategories,
     });
   } catch (error) {
-    next(new AppError("Failed to fetch categories", 500));
+    next(new AppError("Failed to fetch subcategories", 500));
   }
 };
-
 module.exports = { addSubCategory, getAllSubCategories };

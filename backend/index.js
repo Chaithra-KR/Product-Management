@@ -5,10 +5,12 @@ require("dotenv").config();
 const cors = require("cors");
 const bp = require("body-parser");
 const cp = require("cookie-parser");
+const fileUpload = require('express-fileupload');
 const mongoose = require("mongoose");
 const globalErrorHandler = require("./middleware/errorHandler");
 
 app.use(express.json());
+app.use(fileUpload());
 
 app.use(cors());
 app.use(bp.json());

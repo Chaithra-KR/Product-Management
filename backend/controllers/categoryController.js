@@ -4,6 +4,10 @@ const category = require("../models/category");
 const addCategory = async (req, res, next) => {
   try {
     const { name } = req.body;
+    // Validate input
+    if (!name) {
+      return next(new AppError("Name is required", 400));
+    }
 
     // Check if the category already exists
     const existingCategory = await category.findOne({ name });
