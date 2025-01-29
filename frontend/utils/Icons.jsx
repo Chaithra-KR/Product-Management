@@ -1,6 +1,6 @@
 import { RiShoppingCart2Line } from "react-icons/ri";
-import { IoIosHeartEmpty } from "react-icons/io";
-import { FiUser } from "react-icons/fi";
+import { IoIosHeartEmpty, IoMdAdd } from "react-icons/io";
+import { FiMinus, FiUser } from "react-icons/fi";
 import {
   MdChevronRight,
   MdKeyboardArrowDown,
@@ -23,6 +23,8 @@ export default function Icons({
     right: <MdChevronRight style={style} className={className} />,
     down: <MdKeyboardArrowDown style={style} className={className} />,
     check: <FaCheck style={style} className={className} />,
+    plus: <IoMdAdd style={style} className={className} />,
+    minus: <FiMinus style={style} className={className} />,
   };
 
   return iconMap[path] || null;
