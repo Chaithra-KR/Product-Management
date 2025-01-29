@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import Icons from "../../../utils/Icons";
-import { IoIosHeartEmpty } from "react-icons/io";
+import WishlistDrawer from "../Popup/WishlistDrawer";
 
 const Navbar = () => {
+  const [isWishlistOpen, setWishlistOpen] = useState(false);
   return (
     <nav className="w-full h-24 bg-primary px-4">
       <div className="w-full h-full flex items-center justify-between">
@@ -24,7 +25,10 @@ const Navbar = () => {
         {/* Right Side Navigation */}
         <div className="w-4/12 flex justify-center items-center space-x-6">
           {/* Wishlist */}
-          <button className="flex items-center text-white hover:text-yellow-500 transition-colors duration-300">
+          <button
+            className="flex items-center text-white hover:text-yellow-500 transition-colors duration-300"
+            onClick={() => setWishlistOpen(true)} // Open drawer on click
+          >
             <div className="flex justify-between items-center">
               <Icons path="heart" className="w-6 h-6" />
               <span className="flex items-center justify-center bg-yellow-500 text-white text-xs rounded-full w-4 h-4">
@@ -51,6 +55,10 @@ const Navbar = () => {
           </button>
         </div>
       </div>
+      <WishlistDrawer
+        open={isWishlistOpen}
+        onClose={() => setWishlistOpen(false)}
+      />
     </nav>
   );
 };

@@ -1,5 +1,5 @@
 import { RiShoppingCart2Line } from "react-icons/ri";
-import { IoIosHeartEmpty, IoMdAdd } from "react-icons/io";
+import { IoIosCloseCircleOutline, IoIosHeartEmpty, IoMdAdd } from "react-icons/io";
 import { FiMinus, FiUser } from "react-icons/fi";
 import {
   MdChevronRight,
@@ -25,6 +25,7 @@ export default function Icons({
     check: <FaCheck style={style} className={className} />,
     plus: <IoMdAdd style={style} className={className} />,
     minus: <FiMinus style={style} className={className} />,
+    "round-close": <IoIosCloseCircleOutline style={style} className={className} />,
   };
 
   return iconMap[path] || null;
