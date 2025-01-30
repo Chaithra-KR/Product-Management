@@ -28,7 +28,6 @@ export const signUpUser = async (data) => {
 };
 
 // to login
-
 export const loginUser = async (data) => {
   try {
     const response = await axiosInstance.post("/auth/login", data);
@@ -40,7 +39,25 @@ export const loginUser = async (data) => {
   } catch (error) {
     return {
       success: false,
-      message: error.message || "Signup failed. Please try again.",
+      message: error.message || "Login failed. Please try again.",
     };
   }
 };
+
+// to add category
+export const addCategory = async (data) => {
+  try {
+    const response = await axiosInstance.post("/category", data);
+    if (response.success && response.isAuthenticated == true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Category adding failed. Please try again.",
+    };
+  }
+};
+
