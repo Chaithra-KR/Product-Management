@@ -3,7 +3,12 @@ import Icons from "../../../utils/Icons";
 import { LoginBg } from "../../assets/image";
 import { useNavigate, useParams } from "react-router-dom";
 import { message } from "antd";
-import { getProductById } from "../../../utils/axiosService";
+import {
+  addWishlist,
+  checkIfInWishlist,
+  deleteFromWishlist,
+  getProductById,
+} from "../../../utils/axiosService";
 import baseUrl from "../../../utils/cryptUrl";
 
 const ProductDetails = () => {
@@ -12,6 +17,8 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState(0);
   const { id } = useParams();
+  const [isInWishlist, setIsInWishlist] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,7 +27,15 @@ const ProductDetails = () => {
         const response = await getProductById(id);
         if (response.success) {
           setProduct(response.data);
-          setSelectedVariant(response.data.variants[0]); // Default first variant
+          setSelectedVariant(response.data.variants[0]);
+
+          // Check if the product is in the wishlist
+          const wishlistResponse = await checkIfInWishlist(id);
+          console.log(wishlistResponse);
+
+          if (wishlistResponse.success) {
+            setIsInWishlist(wishlistResponse.isInWishlist); // Set the status
+          }
         } else {
           message.error("Failed to load product details.");
         }
@@ -33,6 +48,33 @@ const ProductDetails = () => {
   }, [id]);
 
   if (!product) return <div>Loading...</div>;
+
+  const toggleWishlist = async (productId) => {
+    try {
+      let response;
+  
+      if (isInWishlist) {
+        response = await deleteFromWishlist(productId);
+        if (response.success) {
+          setIsInWishlist((prev) => !prev); // Ensures state updates correctly
+          message.success("Removed from wishlist!");
+        } else {
+          throw new Error(response.message || "Failed to remove from wishlist.");
+        }
+      } else {
+        response = await addWishlist({ productId });
+        if (response.success) {
+          setIsInWishlist((prev) => !prev); 
+          message.success("Added to wishlist!");
+        } else {
+          throw new Error(response.message || "Failed to add to wishlist.");
+        }
+      }
+    } catch (error) {
+      message.error(error.message || "An error occurred. Please try again.");
+    }
+  };
+  
 
   return (
     <div className="flex flex-col md:flex-row gap-8">
@@ -153,8 +195,24 @@ const ProductDetails = () => {
           <button className="w-44 py-3 bg-yellow-500 text-white rounded-3xl hover:bg-yellow-600">
             Buy it now
           </button>
-          <button className="w-12 h-12 border rounded-full flex items-center justify-center bg-gray-100">
-            <Icons path="heart" className="w-5 h-5" />
+
+          <button
+            onClick={() => toggleWishlist(product._id)}
+            className="w-12 h-12 border rounded-full flex items-center justify-center bg-gray-100"
+          >
+            {isInWishlist ? (
+              <Icons
+                path="heart-filled"
+                className={`w-5 h-5  text-red-500
+                }`} // Visible when in wishlist
+              />
+            ) : (
+              <Icons
+                path="heart"
+                className={`w-5 h-5 text-gray-600
+                }`} // Visible when not in wishlist
+              />
+            )}
           </button>
         </div>
       </div>

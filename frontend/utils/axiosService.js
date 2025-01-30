@@ -36,7 +36,8 @@ export const uploadImages = async (data) => {
     return {
       success: false,
       message:
-        error.response?.data?.message || "Product adding failed. Please try again.",
+        error.response?.data?.message ||
+        "Product adding failed. Please try again.",
     };
   }
 };
@@ -191,6 +192,74 @@ export const getProductById = async (id) => {
     return {
       success: false,
       message: error.message || "Product fetching failed. Please try again.",
+    };
+  }
+};
+
+// to get wishlist
+export const getWishlist = async () => {
+  try {
+    const response = await axiosInstance.get("/wishlist");
+    if (response.success && response.isAuthenticated === true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Wishlist fetching failed. Please try again.",
+    };
+  }
+};
+
+// to add wishlist
+export const addWishlist = async (data) => {
+  try {
+    const response = await axiosInstance.post("/wishlist", data);
+    if (response.success && response.isAuthenticated === true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Wishlist adding failed. Please try again.",
+    };
+  }
+};
+
+// to delete from wishlist
+export const deleteFromWishlist = async (id) => {
+  try {
+    const response = await axiosInstance.delete(`/wishlist/${id}`);
+    if (response.success && response.isAuthenticated === true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Wishlist deleting failed. Please try again.",
+    };
+  }
+};
+
+// In axiosService.js
+export const checkIfInWishlist = async (productId) => {
+  try {
+    const response = await axiosInstance.get(`/wishlist/${productId}`);
+    if (response.success && response.isAuthenticated === true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Wishlist deleting failed. Please try again.",
     };
   }
 };
