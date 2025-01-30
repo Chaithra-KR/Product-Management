@@ -61,3 +61,55 @@ export const addCategory = async (data) => {
   }
 };
 
+// to get categories
+export const getCategories = async () => {
+  try {
+    const response = await axiosInstance.get("/category");
+    if (response.success && response.isAuthenticated == true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Category fetching failed. Please try again.",
+    };
+  }
+};
+
+// to add sub category
+export const addSubCategory = async (data) => {
+  try {
+    const response = await axiosInstance.post("/subcategory", data);
+    if (response.success && response.isAuthenticated == true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Subcategory adding failed. Please try again.",
+    };
+  }
+};
+
+// to get sub categories
+export const getSubCategories = async () => {
+  try {
+    const response = await axiosInstance.get("/subCategory");
+    if (response.success && response.isAuthenticated == true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Subcategory fetching failed. Please try again.",
+    };
+  }
+};
+
+

@@ -29,6 +29,7 @@ const addCategory = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
+      isAuthenticated: true,
       message: `Added new category named ${name}`,
     });
   } catch (error) {
@@ -46,6 +47,7 @@ const getAllCategories = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      isAuthenticated: true,
       message: "Categories retrieved successfully",
       data: categories,
     });
