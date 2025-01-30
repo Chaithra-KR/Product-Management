@@ -1,20 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, message } from "antd";
 import Icons from "../../../utils/Icons";
 import ImageUploader from "../Home/ImageUploader";
+import { addProduct, getSubCategories } from "../../../utils/axiosService";
 
 const AddProduct = ({ isOpen, onClose }) => {
   const [title, setTitle] = useState("");
   const [subCategory, setSubCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [variants, setVariants] = useState([{ ram: "", price: "", qty: 0 }]);
+  const [variants, setVariants] = useState([{ name: "", price: "", qty: 0 }]);
   const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
+  const [subCategoryOptions, setSubCategoryOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const [handleImageUpload, setHandleImageUpload] = useState(null);
+  // Fetching subcategories from the server
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      const response = await getSubCategories();
+      if (response.success) {
+        const options = response.data.map((category) => ({
+          label: category.name,
+          value: category._id,
+        }));
+        setSubCategoryOptions(options);
+      } else {
+        message.error("Failed to load categories.");
+      }
+    } catch (error) {
+      message.error("Error fetching categories.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const handleAddVariant = () => {
     const isVariantEmpty = variants.some(
-      (variant) => !variant.ram || !variant.price || !variant.qty
+      (variant) => !variant.name || !variant.price || variant.qty <= 0
     );
+
     if (isVariantEmpty) {
       message.warning(
         "Please fill in all variant fields before adding a new one."
@@ -22,7 +52,7 @@ const AddProduct = ({ isOpen, onClose }) => {
       return;
     }
 
-    setVariants([...variants, { ram: "", price: "", qty: 0 }]);
+    setVariants([...variants, { name: "", price: "", qty: 0 }]);
   };
 
   const handleRemoveVariant = (index) => {
@@ -63,37 +93,98 @@ const AddProduct = ({ isOpen, onClose }) => {
       if (variant.qty <= 0 || isNaN(variant.qty))
         newErrors[`variantQty${index}`] = "Valid quantity is required.";
     });
-    if (images.length === 0) {
-      newErrors.images = "At least one image is required.";
-    }
+    // if (images.length === 0) {
+    //   newErrors.images = "At least one image is required.";
+    // }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (!validateForm()) return;
+  // const handleSubmit = async () => {
+  //   if (!validateForm()) return;
 
-    const productData = {
+  //   // Create a FormData object to handle file uploads
+  //   const formData = new FormData();
+  //   formData.append('title', title);
+  //   formData.append('subcategory', subCategory);
+  //   formData.append('description', description);
+
+  //   // Append the variants
+  //   variants.forEach((variant, index) => {
+  //     formData.append(`name`, variant.name);
+  //     formData.append(`price`, parseFloat(variant.price));
+  //     formData.append(`qty`, variant.qty.toString());
+  //   });
+
+  //   // Append images
+  //   images.forEach((file, index) => {
+  //   if (file.originFileObj) {
+  //     formData.append("images", file.originFileObj); // Ensure it's a File object
+  //   }
+  // });
+
+  //   try {
+  //     setLoading(true);
+  //     const response = await addProduct(formData);
+  //     message.success(response.message);
+  //     resetFields();
+  //     onClose();
+  //   } catch (error) {
+  //     message.error("Product adding failed. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const receiveHandleImageUpload = (childFunction) => {
+    setHandleImageUpload(() => childFunction);
+  };
+
+  const handleSubmit = async () => {
+    if (!handleImageUpload) {
+      message.error("Image upload function not available.");
+      return;
+    }
+  
+    const uploadedImages = await handleImageUpload();
+    console.log("Upload result: ", uploadedImages);
+  
+    if (!uploadedImages || uploadedImages.length === 0) {
+      message.error("Image upload failed. Please try again.");
+      return;
+    }
+  
+    if (!validateForm()) return;
+  
+    const data = {
       title,
       subcategory: subCategory,
       description,
       variants: variants.map((variant) => ({
         name: variant.name,
         price: parseFloat(variant.price),
-        qty: variant.qty,
+        qty: variant.qty.toString(),
       })),
-      images,
+      images: uploadedImages,
     };
-
-    console.log("Product data to submit:", productData);
-    onClose(); // Close modal after submission
+  
+    try {
+      const response = await addProduct(data);
+      message.success(response.message);
+      resetFields();
+      onClose();
+    } catch (error) {
+      message.error("Product adding failed. Please try again.");
+    }
   };
+  
 
   const resetFields = () => {
     setTitle("");
     setSubCategory("");
     setDescription("");
     setImages([]);
+    setVariants([{ name: "", price: "", qty: 0 }]);
     setErrors({});
   };
 
@@ -107,13 +198,13 @@ const AddProduct = ({ isOpen, onClose }) => {
       closable={false}
       maskStyle={false}
     >
-      <div className="p-4 h-[36rem] overflow-y-auto">
+      <div className="p-4 h-[41rem] overflow-y-auto">
         <h1 className="text-2xl font-medium text-center mb-8">Add Product</h1>
 
         <div className="space-y-4">
           {/* Title */}
           <div className="flex items-center gap-4">
-            <label className="w-32 text-gray-400 text-lg">Title :</label>
+            <label className="w-32 text-gray-400 text-base">Title :</label>
             <div className="w-full">
               <input
                 type="text"
@@ -129,7 +220,7 @@ const AddProduct = ({ isOpen, onClose }) => {
 
           {/* Variants */}
           <div className="flex items-start">
-            <label className="w-32 text-gray-400 text-lg">Variants :</label>
+            <label className="w-32 text-gray-400 text-base">Variants :</label>
             <div className="flex-1 space-y-4">
               {variants.map((variant, index) => (
                 <div key={index} className="flex gap-4 items-center">
@@ -138,9 +229,9 @@ const AddProduct = ({ isOpen, onClose }) => {
                       <label className="text-sm text-gray-400 mb-1">Ram:</label>
                       <input
                         type="text"
-                        value={variant.ram}
+                        value={variant.name}
                         onChange={(e) =>
-                          handleVariantChange(index, "ram", e.target.value)
+                          handleVariantChange(index, "name", e.target.value)
                         }
                         className="w-full rounded-lg border-2 border-gray-300 p-2 focus:border-blue-200 focus:ring-blue-border-blue-200 focus:outline-none"
                       />
@@ -150,7 +241,7 @@ const AddProduct = ({ isOpen, onClose }) => {
                         Price:
                       </label>
                       <input
-                        type="text"
+                        type="number"
                         value={variant.price}
                         onChange={(e) =>
                           handleVariantChange(index, "price", e.target.value)
@@ -209,14 +300,22 @@ const AddProduct = ({ isOpen, onClose }) => {
 
           {/* Sub category */}
           <div className="flex items-center gap-4">
-            <label className="w-32 text-gray-400 text-lg">Sub category :</label>
+            <label className="w-32 text-gray-400 text-base">
+              Sub category :
+            </label>
             <div className="w-full">
-              <input
-                type="text"
+              <select
                 value={subCategory}
                 onChange={(e) => setSubCategory(e.target.value)}
                 className="w-full rounded-lg border-2 border-gray-300 p-2 focus:border-blue-200 focus:ring-blue-border-blue-200 focus:outline-none"
-              />
+              >
+                <option value="">Select Subcategory</option>
+                {subCategoryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <p className="text-red-500 text-sm mt-1">
                 {errors.subCategory && errors.subCategory}
               </p>
@@ -224,14 +323,15 @@ const AddProduct = ({ isOpen, onClose }) => {
           </div>
 
           {/* Description */}
-          <div className="flex items-start gap-4">
-            <label className="w-32 text-gray-400 text-lg">Description :</label>
+          <div className="flex items-center gap-4">
+            <label className="w-32 text-gray-400 text-base">
+              Description :
+            </label>
             <div className="w-full">
-              <input
-                type="text"
+              <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-lg border-2 border-gray-300 p-2 focus:border-blue-200 focus:ring-blue-border-blue-200 focus:outline-none"
+                className="w-full h-32 rounded-lg border-2 border-gray-300 p-2 focus:border-blue-200 focus:ring-blue-border-blue-200 focus:outline-none"
               />
               <p className="text-red-500 text-sm mt-1">
                 {errors.description && errors.description}
@@ -241,9 +341,12 @@ const AddProduct = ({ isOpen, onClose }) => {
 
           {/* Image upload */}
           <div className="flex items-center gap-4">
-            <label className="w-32 text-gray-400 text-lg">Images :</label>
+            <label className="w-32 text-gray-400 text-base">Images :</label>
             <div className="w-full">
-              <ImageUploader setImages={setImages} />
+              <ImageUploader
+                setImages={setImages}
+                passHandleImageUpload={receiveHandleImageUpload}
+              />
               {errors.images && (
                 <p className="text-red-500 text-sm mt-1">{errors.images}</p>
               )}

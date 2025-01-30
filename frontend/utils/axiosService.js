@@ -1,3 +1,4 @@
+import axios from "axios";
 import axiosInstance from "./axiosInstance";
 
 export const checkAuthStatus = async () => {
@@ -10,6 +11,36 @@ export const checkAuthStatus = async () => {
     return false;
   }
 };
+
+export const uploadImages = async (data) => {
+  try {
+    const response = await axios.post(
+      "http://localhost:5000/api/v1/product/upload-image",
+      data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          authorization: `Bearer ${localStorage.getItem("authUser")}`,
+        },
+      }
+    );
+
+    console.log(response);
+
+    if (response.data.success && response.data.isAuthenticated) {
+      return response.data;
+    } else {
+      throw new Error(response.data.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error.response?.data?.message || "Product adding failed. Please try again.",
+    };
+  }
+};
+
 // to register
 export const signUpUser = async (data) => {
   try {
@@ -107,9 +138,59 @@ export const getSubCategories = async () => {
   } catch (error) {
     return {
       success: false,
-      message: error.message || "Subcategory fetching failed. Please try again.",
+      message:
+        error.message || "Subcategory fetching failed. Please try again.",
     };
   }
 };
 
+// to add product
+export const addProduct = async (data) => {
+  try {
+    const response = await axiosInstance.post("/product", data);
+    if (response.success && response.isAuthenticated == true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Product adding failed. Please try again.",
+    };
+  }
+};
 
+// to get products
+export const getProducts = async () => {
+  try {
+    const response = await axiosInstance.get("/product");
+    if (response.success && response.isAuthenticated == true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Products fetching failed. Please try again.",
+    };
+  }
+};
+
+// to get product by id
+export const getProductById = async (id) => {
+  try {
+    const response = await axiosInstance.get(`/product/${id}`);
+    if (response.success && response.isAuthenticated === true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Product fetching failed. Please try again.",
+    };
+  }
+};

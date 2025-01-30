@@ -1,32 +1,37 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Icons from "../../../utils/Icons";
 import { LoginBg } from "../../assets/image";
+import { message } from "antd";
+import { getProducts } from "../../../utils/axiosService";
+import { useNavigate } from "react-router-dom";
+import baseUrl from "../../../utils/cryptUrl";
 
 const Products = () => {
-  const [expandedCategories, setExpandedCategories] = useState({
-    Laptop: true,
-  });
+  const [loading, setLoading] = useState(false);
 
-  const products = Array(6).fill({
-    name: "HP AMD Ryzen 3",
-    price: 529.99,
-    image: LoginBg,
-  });
+  const [products, setProducts] = useState([]);
+  const navigate = useNavigate();
 
-  const [categories, setCategories] = useState([
-    { id: "hp", name: "Hp", checked: true },
-    { id: "dell", name: "Dell", checked: false },
-  ]);
-
-  const toggleCategory = (id) => {
-    setCategories(
-      categories.map((category) =>
-        category.id === id
-          ? { ...category, checked: !category.checked }
-          : category
-      )
-    );
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await getProducts();
+      if (response.success) {
+        setProducts(response.data);
+      } else {
+        message.error("Failed to load products.");
+      }
+    } catch (error) {
+      message.error("Error fetching products.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   return (
     <div className="flex-1">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -40,15 +45,21 @@ const Products = () => {
             </button>
             <div className="mb-4">
               <img
-                src={product.image}
-                alt={product.name}
+                src={`${baseUrl}/uploads/${product.image}`}
+                alt={product.title}
                 className="w-full h-64 object-cover rounded-2xl cursor-pointer"
+                onClick={() => navigate(`/product/${product._id}`)}
               />
             </div>
-            <h3 className="text-lg font-medium text-blue-900 mb-2 cursor-pointer">
-              {product.name}
+            <h3
+              onClick={() => navigate(`/product/${product._id}`)}
+              className="text-lg font-medium text-blue-900 mb-2 cursor-pointer"
+            >
+              {product.title}
             </h3>
-            <p className="text-gray-900 font-semibold">${product.price}</p>
+            <p className="text-gray-900 font-semibold">
+              ${product.variants[0].price}
+            </p>
             <div className="flex mt-2">
               {Array(5)
                 .fill(null)

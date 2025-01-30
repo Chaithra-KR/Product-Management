@@ -1,88 +1,126 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Icons from "../../../utils/Icons";
 import { LoginBg } from "../../assets/image";
+import { useNavigate, useParams } from "react-router-dom";
+import { message } from "antd";
+import { getProductById } from "../../../utils/axiosService";
+import baseUrl from "../../../utils/cryptUrl";
 
 const ProductDetails = () => {
-  const [selectedRam, setSelectedRam] = useState("4 GB");
+  const [product, setProduct] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState(0);
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-  const product = {
-    name: "HP AMD Ryzen 3",
-    price: 529.99,
-    stock: 34,
-    images: [LoginBg, LoginBg, LoginBg],
-    ramOptions: ["4 GB", "8 GB", "16 GB"],
-  };
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await getProductById(id);
+        if (response.success) {
+          setProduct(response.data);
+          setSelectedVariant(response.data.variants[0]); // Default first variant
+        } else {
+          message.error("Failed to load product details.");
+        }
+      } catch (error) {
+        message.error("Error fetching product details.");
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  if (!product) return <div>Loading...</div>;
 
   return (
-    <div className="max-w-screen-2xl mx-auto p-6 flex flex-col md:flex-row gap-8">
+    <div className="flex flex-col md:flex-row gap-8">
       {/* Left side - Images */}
       <div className="w-full md:w-1/2">
-        <div className="bg-white h-[31rem] rounded-2xl border-2 border-gray-200 p-4 mb-4">
+        <div className="bg-white h-[29rem] rounded-2xl border-2 border-gray-200 p-4 mb-4">
           <img
-            src={product.images[mainImage]}
-            alt="Product"
+            src={
+              product.images && product.images.length > 0
+                ? `${baseUrl}/uploads/${product.images[mainImage]}`
+                : LoginBg
+            }
+            alt={product.title}
             className="w-full h-full object-cover rounded-2xl"
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          {product.images.slice(1).map((img, idx) => (
-            <button
-              key={idx}
-              className=" rounded-2xl p-2 border-2 border-gray-200 hover:border-primary"
-              onClick={() => setMainImage(idx + 1)}
-            >
-              <img
-                src={img}
-                alt={`Thumbnail ${idx + 1}`}
-                className="w-full h-24 object-contain rounded-2xl bg-gray-100"
-              />
-            </button>
-          ))}
+        <div className="flex w-full gap-2">
+          {product.images &&
+            product.images.length > 1 &&
+            product.images.map((img, idx) => (
+              <button
+                key={idx}
+                className={`rounded-2xl p-2 border-2 ${
+                  mainImage === idx ? "border-primary" : "border-gray-200"
+                } w-${Math.floor(100 / product.images.length)}`}
+                onClick={() => setMainImage(idx)}
+                style={{ width: `${100 / product.images.length}%` }}
+              >
+                <img
+                  src={`${baseUrl}/uploads/${img}`}
+                  alt={`Thumbnail ${idx + 1}`}
+                  className="w-full h-24 object-contain rounded-2xl bg-gray-100"
+                />
+              </button>
+            ))}
         </div>
       </div>
 
       {/* Right side - Details */}
       <div className="w-full md:w-1/2 p-2">
-        <h1 className="text-3xl font-bold text-primary">{product.name}</h1>
+        <h1 className="text-3xl font-bold text-primary">{product.title}</h1>
 
+        {/* Price */}
         <div className="mt-4">
           <span className="text-3xl font-bold text-gray-700">
-            ${product.price}
+            ${selectedVariant?.price || "N/A"}
           </span>
         </div>
 
+        {/* Availability */}
         <div className="mt-4">
           <div className="flex items-center gap-2 text-xl">
-            <span className="font-medium ">Availability:</span>
+            <span className="font-medium">Availability:</span>
             <div className="flex items-center gap-1 text-green-600">
               <Icons path="check" className="w-4 h-4" />
-              <span>In stock</span>
+              <span>
+                {selectedVariant?.qty > 0 ? "In Stock" : "Out of Stock"}
+              </span>
             </div>
           </div>
           <p className="text-lg text-gray-500 mt-1">
-            Hurry up! only {product.stock} product left in stock!
+            Hurry up! Only {selectedVariant?.qty || 0} left in stock!
           </p>
         </div>
+
         <div className="my-10 border-2 border-gray-200"></div>
+
+        {/* Variant Selection */}
         <div className="flex items-center gap-5">
-          <span className="font-medium">Ram:</span>
+          <span className="font-medium">Variants:</span>
           <div className="flex gap-4 mt-2">
-            {product.ramOptions.map((ram) => (
+            {product.variants.map((variant) => (
               <button
-                key={ram}
+                key={variant._id}
                 className={`px-3 py-1 rounded text-gray-800 bg-gray-100 ${
-                  selectedRam === ram ? "border border-gray-900 " : ""
+                  selectedVariant?._id === variant._id
+                    ? "border border-gray-900"
+                    : ""
                 }`}
-                onClick={() => setSelectedRam(ram)}
+                onClick={() => setSelectedVariant(variant)}
               >
-                {ram}
+                {variant.name}
               </button>
             ))}
           </div>
         </div>
 
+        {/* Quantity Selection */}
         <div className="mt-6">
           <span className="font-medium">Quantity:</span>
           <div className="flex items-center gap-2 mt-2">
@@ -107,6 +145,7 @@ const ProductDetails = () => {
           </div>
         </div>
 
+        {/* Buttons */}
         <div className="flex gap-4 mt-8 font-semibold text-lg">
           <button className="w-44 py-3 bg-yellow-500 text-white rounded-3xl hover:bg-yellow-600">
             Edit product

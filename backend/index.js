@@ -8,14 +8,21 @@ const cp = require("cookie-parser");
 const fileUpload = require('express-fileupload');
 const mongoose = require("mongoose");
 const globalErrorHandler = require("./middleware/errorHandler");
+const path = require("path");
 
-app.use(express.json());
-app.use(fileUpload());
+// app.use(fileUpload({
+//   useTempFiles: true, // Enables temp file storage (fixes some issues)
+//   tempFileDir: "/tmp/",
+//   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB file limit (optional)
+// }));
+app.use(express.json()); // JSON middleware
+app.use(express.urlencoded({ extended: true })); 
+
 
 app.use(cors());
 app.use(bp.json());
 app.use(cp());
-
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 mongoose
   .connect(process.env.DBC)
   .then(() => {

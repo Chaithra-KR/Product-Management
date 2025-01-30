@@ -2,115 +2,71 @@ const APIFeatures = require("../config/apiFeatures");
 const AppError = require("../config/AppError");
 const product = require("../models/product");
 
-const addProduct = async (req, res, next) => {
+const addProduct = async (req, res) => {
   try {
-    const { title, subcategory, description, variants } = req.body;
+    const { title, subcategory, description, variants, images } = req.body;
 
-    // Validate required fields
-    if (!title || !subcategory || !description || !variants) {
-      return next(new AppError("All fields are required", 400));
-    }
+    // Parse variants if they come as a string
+    const parsedVariants = Array.isArray(variants)
+      ? variants
+      : JSON.parse(variants);
 
-    // Log the variants to check the data
-    console.log("Received variants:", variants);
+    const imageFilenames = images.map((file) => {
+      const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, ""); 
+      return `${timestamp}-${file.filename}`;
+    });
 
-    // Check if variants is an array and has at least one variant
-    if (!Array.isArray(variants) || variants.length === 0) {
-      return next(
-        new AppError("Variants must be an array with at least one variant", 400)
-      );
-    }
-
-    // Check for missing fields in each variant
-    for (const variant of variants) {
-      if (!variant.name || !variant.price || variant.qty === undefined) {
-        return next(
-          new AppError(
-            "Each variant must have a name, price, and quantity",
-            400
-          )
-        );
-      }
-    }
-
-    // Check if the product already exists by title and subcategory
-    const existingProduct = await product.findOne({ title, subcategory });
-    if (existingProduct) {
-      return next(new AppError(`${title} product already exists`, 400));
-    }
-
-    // Check if files (images) were uploaded
-    if (!req.files || !req.files.images || req.files.images.length === 0) {
+    if (imageFilenames.length === 0) {
       return next(new AppError("At least one image is required", 400));
     }
 
-    const images = req.files.images;
-    const imagePaths = [];
-
-    // Loop through images and save them
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i];
-      const uploadPath = `./uploads/${image.name}`;
-
-      // Move image to upload directory
-      await image.mv(uploadPath, (err) => {
-        if (err) {
-          return next(new AppError("Failed to upload image", 500));
-        }
-      });
-
-      imagePaths.push(uploadPath);
-    }
-
-    // Create and save the new product
+    // Create a new product
     const newProduct = new product({
       title,
       subcategory,
       description,
-      images: imagePaths,
-      variants,
+      images: imageFilenames,
+      variants: parsedVariants,
     });
 
-    await newProduct.save().catch((error) => {
-      if (error.name === "ValidationError") {
-        return next(new AppError(error.message, 400));
-      }
-      return next(new AppError("Failed to save the product.", 500));
-    });
-
+    await newProduct.save();
     res.status(201).json({
       success: true,
-      message: `Added new product named ${title}`,
+      message: "Product added successfully",
+      product: newProduct,
     });
   } catch (error) {
-    next(error); // Pass errors to the global error handling middleware
+    console.error("Error saving product:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
-// const getAllProducts = async (req, res, next) => {
-//   try {
-//     const products = await product.find().populate("subcategory");
+const getProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
 
-//     if (!products || products.length === 0) {
-//       return next(new AppError("No product found.", 404));
-//     }
+    const Product = await product.findById(id).populate("subcategory");
 
-//     res.status(200).json({
-//       success: true,
-//       message: "Products retrieved successfully",
-//       data: products,
-//     });
-//   } catch (error) {
-//     next(new AppError("Failed to fetch products", 500));
-//   }
-// };
+    if (!Product) {
+      return next(new AppError("No product found.", 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      isAuthenticated: true,
+      message: "Product retrieved successfully",
+      data: Product,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const getAllProducts = async (req, res, next) => {
   try {
     const features = new APIFeatures(product, product.find(), req.query);
 
     // Apply filter, search, and pagination functionalities
-
     features
       .search()
       .filter()
@@ -126,6 +82,7 @@ const getAllProducts = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      isAuthenticated: true,
       message: "Products retrieved successfully",
       data: products,
     });
@@ -240,4 +197,23 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
-module.exports = { addProduct, getAllProducts, updateProduct };
+const uploadImage = async (req, res, next) => {
+  try {
+    console.log(req.files);
+    res.status(200).json({
+      success: true,
+      isAuthenticated: true,
+      data: req.files,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  addProduct,
+  getAllProducts,
+  updateProduct,
+  uploadImage,
+  getProduct,
+};

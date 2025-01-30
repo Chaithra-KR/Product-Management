@@ -4,6 +4,7 @@ const axiosInstance = axios.create({
   baseURL: "http://localhost:5000/api/v1",
   headers: {
     "Content-Type": "application/json",
+    // "Content-Type": "multipart/form-data",
   },
 });
 
@@ -25,7 +26,7 @@ axiosInstance.interceptors.response.use(
   (response) => {
     // Handle success status (2xx)
     if (response.data.success) {
-      return response.data; 
+      return response.data;
     } else {
       // If success is false, reject with the message from the backend
       return Promise.reject({ success: false, message: response.data.message });
@@ -37,14 +38,17 @@ axiosInstance.interceptors.response.use(
       error.response && error.response.data
         ? error.response.data.message
         : "An error occurred. Please try again.";
-    
+
     if (error.response) {
       if (error.response.status >= 400 && error.response.status < 500) {
         // Handle client errors (4xx)
         return Promise.reject({ success: false, message: errorMessage });
       } else if (error.response.status >= 500) {
         // Handle server errors (5xx)
-        return Promise.reject({ success: false, message: "Server error. Please try again later." });
+        return Promise.reject({
+          success: false,
+          message: "Server error. Please try again later.",
+        });
       }
     }
 

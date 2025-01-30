@@ -9,14 +9,12 @@ const Homepage = () => {
     <>
       <Navbar />
       <Header />
-      <div className="px-4 mb-6 bg-white">
-        <div className="max-w-screen-2xl mx-auto">
+      <div className="mb-6 max-w-screen-2xl mx-auto bg-white">
           <div className="flex gap-8">
             <Sidebar />
             <div className="flex-1">
               <Products />
             </div>
-          </div>
         </div>
       </div>
     </>
