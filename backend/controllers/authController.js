@@ -52,6 +52,7 @@ const signUp = async (req, res, next) => {
     // Respond with success
     res.status(201).json({
       success: true,
+      isAuthenticated: true,
       message: `Welcome ${name}!`,
       token,
     });
@@ -84,6 +85,7 @@ const login = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      isAuthenticated: true,
       message: "Login successful",
       token,
     });
