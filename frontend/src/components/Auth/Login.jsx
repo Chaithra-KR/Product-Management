@@ -1,19 +1,50 @@
-import React from "react";
+import React, { useState } from "react";
 import Icons from "../../../utils/Icons";
+import { useNavigate } from "react-router-dom";
+import { message } from "antd";
+import { loginUser } from "../../../utils/axiosService";
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    const data = { email, password };
+    try {
+      const response = await loginUser(data);
+      localStorage.setItem("authUser", response.token);
+      message.success(response.message);
+      navigate("/home");
+    } catch (error) {
+      setError(
+        error.response?.data?.message || "Login failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-screen">
       {/* Left Panel */}
       <div className="w-4/6 flex items-center justify-center p-16 bg-white">
         <div className="w-full max-w-md space-y-8">
           <h1 className="text-5xl text-center font-bold text-yellow-500 leading-tight">
-            Sign In to
-            <br />
-            Your Account
+            Sign In to <br /> Your Account
           </h1>
 
-          <form className="space-y-4">
+          {error && (
+            <p className="text-red-500 font-semibold text-center">{error}</p>
+          )}
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="relative">
               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                 <Icons path="email" className="h-5 w-5 text-gray-400" />
@@ -21,6 +52,9 @@ const Login = () => {
               <input
                 type="email"
                 placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
                 className="w-full py-3 pl-12 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
               />
             </div>
@@ -32,6 +66,9 @@ const Login = () => {
               <input
                 type="password"
                 placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
                 className="w-full py-3 pl-12 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
               />
             </div>
@@ -41,13 +78,17 @@ const Login = () => {
                 href="#"
                 className="text-black font-semibold underline hover:text-gray-800 text-sm"
               >
-                forgot password?
+                Forgot password?
               </a>
             </div>
 
             <div className="flex justify-center">
-              <button className="w-60 bg-yellow-500 text-white py-3 rounded-full hover:bg-yellow-600 transition-colors duration-300">
-                SIGN IN
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-60 bg-yellow-500 text-white py-3 rounded-full hover:bg-yellow-600 transition-colors duration-300 disabled:opacity-50"
+              >
+                {loading ? "Signing In..." : "SIGN IN"}
               </button>
             </div>
           </form>
@@ -141,7 +182,10 @@ const Login = () => {
             Enter your personal details and <br />
             start your journey with us
           </p>
-          <button className="border-2 w-64 border-white text-white py-4 rounded-full hover:bg-white hover:text-blue-900 transition-colors duration-300">
+          <button
+            onClick={() => navigate("/sign-up")}
+            className="border-2 w-64 border-white text-white py-4 rounded-full hover:bg-white hover:text-blue-900 transition-colors duration-300"
+          >
             SIGN UP
           </button>
         </div>
