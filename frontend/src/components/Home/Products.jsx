@@ -45,7 +45,7 @@ const Products = () => {
             </button>
             <div className="mb-4">
               <img
-                src={`${baseUrl}/uploads/${product.image}`}
+                src={`${baseUrl}/uploads/${product.images[0]}`}
                 alt={product.title}
                 className="w-full h-64 object-cover rounded-2xl cursor-pointer"
                 onClick={() => navigate(`/product/${product._id}`)}

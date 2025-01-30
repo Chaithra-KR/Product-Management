@@ -11,10 +11,7 @@ const addProduct = async (req, res) => {
       ? variants
       : JSON.parse(variants);
 
-    const imageFilenames = images.map((file) => {
-      const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, ""); 
-      return `${timestamp}-${file.filename}`;
-    });
+    const imageFilenames = images.map((file) => file.filename);
 
     if (imageFilenames.length === 0) {
       return next(new AppError("At least one image is required", 400));

@@ -10,11 +10,6 @@ const mongoose = require("mongoose");
 const globalErrorHandler = require("./middleware/errorHandler");
 const path = require("path");
 
-// app.use(fileUpload({
-//   useTempFiles: true, // Enables temp file storage (fixes some issues)
-//   tempFileDir: "/tmp/",
-//   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB file limit (optional)
-// }));
 app.use(express.json()); // JSON middleware
 app.use(express.urlencoded({ extended: true })); 
 
