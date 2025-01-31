@@ -142,10 +142,11 @@ const Products = ({ searchTerm, selectedSubcategories }) => {
       )}
 
       {/* Pagination */}
-      {!products.length === 0 && (
-        <div className="mt-8 h-20 flex items-center justify-between">
-          <p className="text-sm text-gray-600">{pagination.totalItems} items</p>
-          {pagination.totalPages > 1 && (
+
+      <div className="mt-8 h-20 flex items-center justify-between">
+        <p className="text-sm text-gray-600">{pagination.totalItems} items</p>
+        {!products.length === 0 ||
+          (pagination.totalPages > 1 && (
             <div className="flex items-center space-x-2">
               {pageButtons().map((item, index) =>
                 item === "..." ? (
@@ -167,28 +168,26 @@ const Products = ({ searchTerm, selectedSubcategories }) => {
                 )
               )}
             </div>
-          )}
-
-          <div>
-            <span>show</span>
-            <select
-              className="ml-4 px-2 py-1 border rounded-lg"
-              onChange={(e) => {
-                const newLimit = parseInt(e.target.value) * 3;
-                setPagination({
-                  ...pagination,
-                  limit: newLimit,
-                });
-                fetchProducts(1);
-              }}
-            >
-              <option value={10}>10 rows</option>
-              <option value={20}>20 rows</option>
-              <option value={50}>50 rows</option>
-            </select>
-          </div>
+          ))}
+        <div>
+          <span>show</span>
+          <select
+            className="ml-4 px-2 py-1 border rounded-lg"
+            onChange={(e) => {
+              const newLimit = parseInt(e.target.value) * 3;
+              setPagination({
+                ...pagination,
+                limit: newLimit,
+              });
+              fetchProducts(1);
+            }}
+          >
+            <option value={10}>10 rows</option>
+            <option value={20}>20 rows</option>
+            <option value={50}>50 rows</option>
+          </select>
         </div>
-      )}
+      </div>
     </div>
   );
 };
