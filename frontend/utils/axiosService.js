@@ -162,7 +162,6 @@ export const addProduct = async (data) => {
   }
 };
 
-
 // to get product
 export const getProducts = async (searchQuery = "", page = 1, limit = 32) => {
   try {
@@ -179,6 +178,32 @@ export const getProducts = async (searchQuery = "", page = 1, limit = 32) => {
     return {
       success: false,
       message: error.message || "Products fetching failed. Please try again.",
+    };
+  }
+};
+
+// to get filtered products by subcategory
+export const getFilteredProductsBySubcategory = async (
+  subcategoryIds = [],
+  page = 1,
+  limit = 32
+) => {
+  try {
+    const response = await axiosInstance.get(
+      `/product/filter?subcategoryIds=${subcategoryIds.join(
+        ","
+      )}&page=${page}&limit=${limit}`
+    );
+
+    if (response.success && response.isAuthenticated === true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Product filtering failed. Please try again.",
     };
   }
 };

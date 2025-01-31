@@ -5,6 +5,7 @@ const {
   updateProduct,
   uploadImage,
   getProduct,
+  getFilteredProducts,
 } = require("../controllers/productController");
 const multer = require("multer");
 
@@ -28,8 +29,9 @@ const upload = multer({
 
 const router = express.Router();
 router.post("/upload-image", upload.array("images"), uploadImage);
-router.post("/" ,addProduct);
+router.post("/", addProduct);
 router.get("/", getAllProducts);
+router.get("/filter", getFilteredProducts); // to subcategory filter
 router.get("/:id", getProduct);
 router.patch("/:id", updateProduct);
 

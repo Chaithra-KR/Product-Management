@@ -6,15 +6,20 @@ import Products from "../components/Home/Products";
 
 const Homepage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSubcategories, setSelectedSubcategories] = useState([]);
+
   return (
     <>
-       <Navbar setSearchTerm={setSearchTerm} />
+      <Navbar setSearchTerm={setSearchTerm} />
       <Header />
       <div className="mb-6 max-w-screen-2xl mx-auto bg-white">
         <div className="flex gap-8">
-          <Sidebar />
+          <Sidebar
+            selectedSubcategories={selectedSubcategories}
+            setSelectedSubcategories={setSelectedSubcategories}
+          />
           <div className="flex-1">
-            <Products searchTerm={searchTerm} />
+            <Products searchTerm={searchTerm} selectedSubcategories={selectedSubcategories} />
           </div>
         </div>
       </div>

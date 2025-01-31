@@ -3,7 +3,7 @@ import Icons from "../../../utils/Icons";
 import { getSubCategories } from "../../../utils/axiosService";
 import { message } from "antd";
 
-const Sidebar = () => {
+const Sidebar = ({ selectedSubcategories, setSelectedSubcategories }) => {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,21 +50,13 @@ const Sidebar = () => {
     }));
   };
 
-  const toggleSubcategory = (categoryId, subcategoryId) => {
-    setCategories((prevCategories) =>
-      prevCategories.map((category) =>
-        category.name === categoryId
-          ? {
-              ...category,
-              subcategories: category.subcategories.map((sub) =>
-                sub.id === subcategoryId
-                  ? { ...sub, checked: !sub.checked }
-                  : sub
-              ),
-            }
-          : category
-      )
-    );
+  const toggleSubcategory = (subcategoryId) => {
+    setSelectedSubcategories((prev) => {
+      if (prev.includes(subcategoryId)) {
+        return prev.filter((id) => id !== subcategoryId);
+      }
+      return [...prev, subcategoryId];
+    });
   };
 
   return (
@@ -72,7 +64,10 @@ const Sidebar = () => {
       <h2 className="font-semibold text-primary mb-5">Categories</h2>
       <ul className="space-y-3">
         <li>
-          <button className="flex items-center justify-between w-full text-left hover:text-blue-900">
+          <button
+            onClick={() => setSelectedSubcategories([])}
+            className="flex items-center justify-between w-full text-left hover:text-blue-900"
+          >
             <span>All Categories</span>
           </button>
         </li>
@@ -97,11 +92,13 @@ const Sidebar = () => {
                     <div key={sub.id} className="flex items-center gap-2">
                       <button
                         className={`relative w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${
-                          sub.checked ? "bg-gray-900" : "bg-blue-100"
+                          selectedSubcategories.includes(sub.id)
+                            ? "bg-gray-900"
+                            : "bg-blue-100"
                         }`}
-                        onClick={() => toggleSubcategory(category.name, sub.id)}
+                        onClick={() => toggleSubcategory(sub.id)}
                       >
-                        {sub.checked && (
+                        {selectedSubcategories.includes(sub.id) && (
                           <Icons
                             path="check"
                             className="w-2.5 h-2.5 text-white"

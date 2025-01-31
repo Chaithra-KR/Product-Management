@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import Icons from "../../../utils/Icons";
-import { getProducts } from "../../../utils/axiosService";
+import {
+  getFilteredProductsBySubcategory,
+  getProducts,
+} from "../../../utils/axiosService";
 import { useNavigate } from "react-router-dom";
 import baseUrl from "../../../utils/cryptUrl";
 
-const Products = ({ searchTerm }) => {
+const Products = ({ searchTerm, selectedSubcategories }) => {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [pagination, setPagination] = useState({
@@ -18,7 +21,19 @@ const Products = ({ searchTerm }) => {
   const fetchProducts = async (page = 1) => {
     setLoading(true);
     try {
-      const response = await getProducts(searchTerm, page, pagination.limit);
+      let response;
+      if (selectedSubcategories.length > 0) {
+        // Fetch filtered products by subcategory
+        response = await getFilteredProductsBySubcategory(
+          selectedSubcategories,
+          page,
+          pagination.limit
+        );
+      } else {
+        // Fetch products based on search term (and pagination)
+        response = await getProducts(searchTerm, page, pagination.limit);
+      }
+
       if (response.success && response.data.length > 0) {
         setProducts(response.data);
         setPagination(response.pagination);
@@ -34,13 +49,7 @@ const Products = ({ searchTerm }) => {
 
   useEffect(() => {
     fetchProducts();
-  }, [searchTerm]);
-
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= pagination.totalPages) {
-      fetchProducts(page);
-    }
-  };
+  }, [searchTerm, selectedSubcategories]);
 
   const pageButtons = () => {
     const totalPages = pagination.totalPages;

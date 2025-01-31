@@ -59,11 +59,10 @@ const getProduct = async (req, res, next) => {
   }
 };
 
-
 const getAllProducts = async (req, res, next) => {
   try {
-    const page = Number(req.query.page) || 1; 
-    const limit = Number(req.query.limit) || 10; 
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     // Get total product count for pagination
@@ -100,6 +99,44 @@ const getAllProducts = async (req, res, next) => {
   }
 };
 
+const getFilteredProducts = async (req, res, next) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Count total products
+    const totalCount = await product.countDocuments();
+
+    const { subcategoryIds } = req.query;
+    console.log(subcategoryIds, "subcategoryIds");
+
+    const subcategoryArray = subcategoryIds
+      ? subcategoryIds.split(",").map((id) => id.trim())
+      : [];
+
+    // Fetch products with pagination
+    const productList = await product
+      .find({ subcategory: { $in: subcategoryArray } })
+      .skip(skip)
+      .limit(limit);
+
+    res.status(200).json({
+      success: true,
+      isAuthenticated: true,
+      message: "Products retrieved successfully",
+      data: productList,
+      pagination: {
+        totalItems: totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        limit: limit,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const updateProduct = async (req, res, next) => {
   try {
@@ -226,4 +263,5 @@ module.exports = {
   updateProduct,
   uploadImage,
   getProduct,
+  getFilteredProducts,
 };

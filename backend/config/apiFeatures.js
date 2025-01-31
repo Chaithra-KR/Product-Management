@@ -7,20 +7,13 @@ class APIFeatures {
 
   // Filter method to apply query parameters filtering
   filter() {
-    const queryObj = { ...this.queryStr };
-
-    // Excluded fields that should not be used in filtering
-    const excludedFields = ["page", "sort", "limit", "field", "search"];
-    excludedFields.forEach((el) => delete queryObj[el]);
-
-    // Advanced filtering (e.g., gt, lt, gte, lte)
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gt|gte|lt|lte)\b/g, (match) => `$${match}`);
-
-    this.query = this.query.find(JSON.parse(queryStr));
-
+    if (this.queryStr.subcategoryIds) {
+      const subcategoryIds = this.queryStr.subcategoryIds.split(',');
+      this.query = this.query.find({ subcategory: { $in: subcategoryIds } });
+    }
     return this;
   }
+
 
   // Search method to apply search functionality
   search() {
