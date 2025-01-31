@@ -4,7 +4,7 @@ import { Drawer, message } from "antd";
 import { deleteFromWishlist, getWishlist } from "../../../utils/axiosService";
 import baseUrl from "../../../utils/cryptUrl";
 
-const WishlistDrawer = ({ open, onClose }) => {
+const WishlistDrawer = ({ open, onClose, updateWishlistCount }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -14,6 +14,7 @@ const WishlistDrawer = ({ open, onClose }) => {
       const response = await getWishlist();
 
       setItems(response.data);
+      updateWishlistCount(response.data.products?.length || 0);
     } catch (error) {
       message.error("Error fetching products.");
       console.log("Error fetching products.");

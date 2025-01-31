@@ -162,11 +162,15 @@ export const addProduct = async (data) => {
   }
 };
 
-// to get products
-export const getProducts = async () => {
+
+// to get product
+export const getProducts = async (searchQuery = "", page = 1, limit = 32) => {
   try {
-    const response = await axiosInstance.get("/product");
-    if (response.success && response.isAuthenticated == true) {
+    const response = await axiosInstance.get(
+      `/product?search=${searchQuery}&page=${page}&limit=${limit}`
+    );
+
+    if (response.success && response.isAuthenticated === true) {
       return response;
     } else {
       throw new Error(response.message);

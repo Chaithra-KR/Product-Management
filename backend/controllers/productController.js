@@ -59,18 +59,24 @@ const getProduct = async (req, res, next) => {
   }
 };
 
+
 const getAllProducts = async (req, res, next) => {
   try {
+    const page = Number(req.query.page) || 1; 
+    const limit = Number(req.query.limit) || 10; 
+    const skip = (page - 1) * limit;
+
+    // Get total product count for pagination
+    const totalCount = await product.countDocuments();
+
     const features = new APIFeatures(product, product.find(), req.query);
 
-    // Apply filter, search, and pagination functionalities
-    features
-      .search()
-      .filter()
-      .sort()
-      .paginate(await product.countDocuments());
+    // Apply filter, search, sorting, and pagination
+    features.search().filter().sort();
 
-    // Execute the query
+    // Apply pagination
+    features.query = features.query.skip(skip).limit(limit);
+
     const products = await features.query.populate("subcategory");
 
     if (!products || products.length === 0) {
@@ -82,15 +88,22 @@ const getAllProducts = async (req, res, next) => {
       isAuthenticated: true,
       message: "Products retrieved successfully",
       data: products,
+      pagination: {
+        totalItems: totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        limit: limit,
+      },
     });
   } catch (error) {
     next(error);
   }
 };
 
+
 const updateProduct = async (req, res, next) => {
   try {
-    const { id } = req.params; // Get id from the URL params
+    const { id } = req.params;
     const { title, subcategory, description, variants } = req.body;
 
     // Validate required fields

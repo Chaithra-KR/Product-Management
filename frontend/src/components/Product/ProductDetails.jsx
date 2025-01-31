@@ -56,7 +56,7 @@ const ProductDetails = () => {
       if (isInWishlist) {
         response = await deleteFromWishlist(productId);
         if (response.success) {
-          setIsInWishlist((prev) => !prev); // Ensures state updates correctly
+          setIsInWishlist((prev) => !prev); 
           message.success("Removed from wishlist!");
         } else {
           throw new Error(response.message || "Failed to remove from wishlist.");
