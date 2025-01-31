@@ -37,7 +37,7 @@ export const uploadImages = async (data) => {
       success: false,
       message:
         error.response?.data?.message ||
-        "Product adding failed. Please try again.",
+        "Image uploading failed. Please try again.",
     };
   }
 };
@@ -158,6 +158,23 @@ export const addProduct = async (data) => {
     return {
       success: false,
       message: error.message || "Product adding failed. Please try again.",
+    };
+  }
+};
+
+// to update product
+export const updateProduct = async (id, data) => {
+  try {    
+    const response = await axiosInstance.patch(`/product/${id}`, data);
+    if (response.success && response.isAuthenticated === true) {
+      return response;
+    } else {
+      throw new Error(response.message);
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Product updating failed. Please try again.",
     };
   }
 };
@@ -288,7 +305,7 @@ export const checkIfInWishlist = async (productId) => {
   } catch (error) {
     return {
       success: false,
-      message: error.message || "Wishlist deleting failed. Please try again.",
+      message: error.message || "Checking Wishlist failed. Please try again.",
     };
   }
 };

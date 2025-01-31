@@ -46,7 +46,6 @@ const getWishlist = async (req, res, next) => {
     const wishlist = await Wishlist.findOne({ user: userId }).populate(
       "products"
     );
-    console.log(wishlist, "wishlist");
 
     if (!wishlist) {
       return res

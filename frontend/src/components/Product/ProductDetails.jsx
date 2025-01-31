@@ -10,16 +10,21 @@ import {
   getProductById,
 } from "../../../utils/axiosService";
 import baseUrl from "../../../utils/cryptUrl";
+import AddProduct from "../Popup/AddProduct";
 
 const ProductDetails = () => {
   const [product, setProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState(0);
-  const { id } = useParams();
   const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const { id } = useParams();
   const navigate = useNavigate();
+
+  const showModal = () => setIsModalOpen(true);
+  const handleCloseModal = () => setIsModalOpen(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -31,10 +36,8 @@ const ProductDetails = () => {
 
           // Check if the product is in the wishlist
           const wishlistResponse = await checkIfInWishlist(id);
-          console.log(wishlistResponse);
-
           if (wishlistResponse.success) {
-            setIsInWishlist(wishlistResponse.isInWishlist); // Set the status
+            setIsInWishlist(wishlistResponse.isInWishlist);
           }
         } else {
           message.error("Failed to load product details.");
@@ -52,19 +55,21 @@ const ProductDetails = () => {
   const toggleWishlist = async (productId) => {
     try {
       let response;
-  
+
       if (isInWishlist) {
         response = await deleteFromWishlist(productId);
         if (response.success) {
-          setIsInWishlist((prev) => !prev); 
+          setIsInWishlist((prev) => !prev);
           message.success("Removed from wishlist!");
         } else {
-          throw new Error(response.message || "Failed to remove from wishlist.");
+          throw new Error(
+            response.message || "Failed to remove from wishlist."
+          );
         }
       } else {
         response = await addWishlist({ productId });
         if (response.success) {
-          setIsInWishlist((prev) => !prev); 
+          setIsInWishlist((prev) => !prev);
           message.success("Added to wishlist!");
         } else {
           throw new Error(response.message || "Failed to add to wishlist.");
@@ -74,7 +79,7 @@ const ProductDetails = () => {
       message.error(error.message || "An error occurred. Please try again.");
     }
   };
-  
+console.log(product,"product");
 
   return (
     <div className="flex flex-col md:flex-row gap-8">
@@ -189,7 +194,10 @@ const ProductDetails = () => {
 
         {/* Buttons */}
         <div className="flex gap-4 mt-8 font-semibold text-lg">
-          <button className="w-44 py-3 bg-yellow-500 text-white rounded-3xl hover:bg-yellow-600">
+          <button
+            onClick={showModal}
+            className="w-44 py-3 bg-yellow-500 text-white rounded-3xl hover:bg-yellow-600"
+          >
             Edit product
           </button>
           <button className="w-44 py-3 bg-yellow-500 text-white rounded-3xl hover:bg-yellow-600">
@@ -201,21 +209,18 @@ const ProductDetails = () => {
             className="w-12 h-12 border rounded-full flex items-center justify-center bg-gray-100"
           >
             {isInWishlist ? (
-              <Icons
-                path="heart-filled"
-                className={`w-5 h-5  text-red-500
-                }`} // Visible when in wishlist
-              />
+              <Icons path="heart-filled" className="w-5 h-5 text-red-500" />
             ) : (
-              <Icons
-                path="heart"
-                className={`w-5 h-5 text-gray-600
-                }`} // Visible when not in wishlist
-              />
+              <Icons path="heart" className="w-5 h-5 text-gray-600" />
             )}
           </button>
         </div>
       </div>
+      <AddProduct
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        existingProduct={product}
+      />
     </div>
   );
 };

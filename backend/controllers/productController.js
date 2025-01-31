@@ -1,6 +1,8 @@
 const APIFeatures = require("../config/apiFeatures");
 const AppError = require("../config/AppError");
 const product = require("../models/product");
+const fs = require('fs');
+const path = require('path');
 
 const addProduct = async (req, res) => {
   try {
@@ -140,107 +142,66 @@ const getFilteredProducts = async (req, res, next) => {
 
 const updateProduct = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { title, subcategory, description, variants } = req.body;
 
-    // Validate required fields
-    if (!title || !subcategory || !description || !variants) {
-      return next(new AppError("All fields are required", 400));
-    }
+    const { title, subcategory, description, variants, images } = req.body;
+    const productId = req.params.id;
 
-    // Log the variants to check the data
-    console.log("Received variants:", variants);
-
-    // Check if variants is an array and has at least one variant
-    if (!Array.isArray(variants) || variants.length === 0) {
-      return next(
-        new AppError("Variants must be an array with at least one variant", 400)
-      );
-    }
-
-    // Check for missing fields in each variant
-    for (const variant of variants) {
-      if (!variant.name || !variant.price || variant.qty === undefined) {
-        return next(
-          new AppError(
-            "Each variant must have a name, price, and quantity",
-            400
-          )
-        );
-      }
-    }
-
-    // Find the product by ID
-    const existingProduct = await product.findById(id);
+    // Check if the product exists
+    const existingProduct = await product.findById(productId);
     if (!existingProduct) {
       return next(new AppError("Product not found", 404));
     }
 
-    // Handle image updates
-    let imagePaths = [...existingProduct.images]; // Start with existing images
+    // Parse variants if they come as a string
+    const parsedVariants = Array.isArray(variants)
+      ? variants
+      : JSON.parse(variants);
 
-    if (req.files && req.files.images && req.files.images.length > 0) {
-      // Delete old images that are not part of the new set
-      const fs = require("fs");
-      const newImages = req.files.images;
+    const imageFilenames = images ? images.map((file) => file.filename) : [];
 
-      // Remove old images from the server
-      for (const oldImagePath of existingProduct.images) {
-        if (
-          !newImages.some((img) => `./uploads/${img.name}` === oldImagePath)
-        ) {
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath); // Remove old image from the server
-          }
-        }
-      }
+    if (imageFilenames.length === 0 && !existingProduct.images.length) {
+      return next(new AppError("At least one image is required", 400));
+    }
 
-      // Process new images
-      for (let i = 0; i < newImages.length; i++) {
-        const image = newImages[i];
-        const uploadPath = `./uploads/${image.name}`;
+    // Get the old images that are no longer part of the product
+    const imagesToRemove = existingProduct.images.filter(
+      (image) => !imageFilenames.includes(image)
+    );
 
-        // Move image to upload directory
-        await image.mv(uploadPath, (err) => {
+    // Delete the old images from the file system
+    imagesToRemove.forEach((image) => {
+      const imagePath = path.join(__dirname, `../../uploads/${image}`);
+      if (fs.existsSync(imagePath)) {
+        fs.unlink(imagePath, (err) => {
           if (err) {
-            return next(new AppError("Failed to upload image", 500));
+            console.error(`Failed to delete image: ${image}`, err);
           }
         });
-
-        // Add new images to the imagePaths array
-        if (!imagePaths.includes(uploadPath)) {
-          imagePaths.push(uploadPath);
-        }
       }
-    }
-
-    // Handle variants updates (adding new, removing old)
-    if (variants) {
-      // If there are variants provided, update the product with the new list
-      existingProduct.variants = variants;
-    }
+    });
 
     // Update product fields
-    existingProduct.title = title;
-    existingProduct.subcategory = subcategory;
-    existingProduct.description = description;
-    existingProduct.images = imagePaths; // Update images
-    existingProduct.variants = variants; // Update variants
+    existingProduct.title = title || existingProduct.title;
+    existingProduct.subcategory = subcategory || existingProduct.subcategory;
+    existingProduct.description = description || existingProduct.description;
+    existingProduct.variants = parsedVariants || existingProduct.variants;
 
-    // Save the updated product
-    await existingProduct.save().catch((error) => {
-      if (error.name === "ValidationError") {
-        return next(new AppError(error.message, 400));
-      }
-      return next(new AppError("Failed to update the product.", 500));
-    });
+    // Only update images if provided
+    if (imageFilenames.length > 0) {
+      existingProduct.images = imageFilenames;
+    }
+
+    // Save updated product
+    await existingProduct.save();
 
     res.status(200).json({
       success: true,
-      message: `Product updated successfully!`,
+      message: "Product updated successfully",
+      product: existingProduct,
     });
   } catch (error) {
-    next(error); // Pass errors to the global error handling middleware
+    console.error("Error updating product:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 

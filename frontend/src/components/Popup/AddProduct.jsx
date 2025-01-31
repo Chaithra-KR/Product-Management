@@ -2,19 +2,19 @@ import React, { useState, useEffect } from "react";
 import { Modal, message } from "antd";
 import Icons from "../../../utils/Icons";
 import ImageUploader from "../Home/ImageUploader";
-import { addProduct, getSubCategories } from "../../../utils/axiosService";
+import { addProduct, getSubCategories, updateProduct } from "../../../utils/axiosService";
 
-const AddProduct = ({ isOpen, onClose }) => {
+const AddProduct = ({ isOpen, onClose, existingProduct = null }) => {
   const [title, setTitle] = useState("");
   const [subCategory, setSubCategory] = useState("");
   const [description, setDescription] = useState("");
   const [variants, setVariants] = useState([{ name: "", price: "", qty: 0 }]);
-  const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
   const [subCategoryOptions, setSubCategoryOptions] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [handleImageUpload, setHandleImageUpload] = useState(null);
+
   // Fetching subcategories from the server
   const fetchCategories = async () => {
     setLoading(true);
@@ -37,8 +37,10 @@ const AddProduct = ({ isOpen, onClose }) => {
   };
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (isOpen) {
+      fetchCategories();
+    }
+  }, [isOpen]);
 
   const handleAddVariant = () => {
     const isVariantEmpty = variants.some(
@@ -93,69 +95,53 @@ const AddProduct = ({ isOpen, onClose }) => {
       if (variant.qty <= 0 || isNaN(variant.qty))
         newErrors[`variantQty${index}`] = "Valid quantity is required.";
     });
-    // if (images.length === 0) {
-    //   newErrors.images = "At least one image is required.";
-    // }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // const handleSubmit = async () => {
-  //   if (!validateForm()) return;
-
-  //   // Create a FormData object to handle file uploads
-  //   const formData = new FormData();
-  //   formData.append('title', title);
-  //   formData.append('subcategory', subCategory);
-  //   formData.append('description', description);
-
-  //   // Append the variants
-  //   variants.forEach((variant, index) => {
-  //     formData.append(`name`, variant.name);
-  //     formData.append(`price`, parseFloat(variant.price));
-  //     formData.append(`qty`, variant.qty.toString());
-  //   });
-
-  //   // Append images
-  //   images.forEach((file, index) => {
-  //   if (file.originFileObj) {
-  //     formData.append("images", file.originFileObj); // Ensure it's a File object
-  //   }
-  // });
-
-  //   try {
-  //     setLoading(true);
-  //     const response = await addProduct(formData);
-  //     message.success(response.message);
-  //     resetFields();
-  //     onClose();
-  //   } catch (error) {
-  //     message.error("Product adding failed. Please try again.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const receiveHandleImageUpload = (childFunction) => {
     setHandleImageUpload(() => childFunction);
   };
+
+  useEffect(() => {
+    if (existingProduct) {
+      setTitle(existingProduct.title);
+      setDescription(existingProduct.description);
+      setVariants(
+        existingProduct.variants || [{ name: "", price: "", qty: 0 }]
+      );
+      
+      if (subCategoryOptions.length > 0) {
+        const defaultSubCategory = subCategoryOptions.find(
+          (category) => category.value === existingProduct.subcategory._id
+        );
+        if (defaultSubCategory) {
+          setSubCategory(defaultSubCategory.value);
+        }
+      }
+    } else {
+      resetFields();
+    }
+  }, [existingProduct, subCategoryOptions]); 
+  
 
   const handleSubmit = async () => {
     if (!handleImageUpload) {
       message.error("Image upload function not available.");
       return;
     }
-  
+
     const uploadedImages = await handleImageUpload();
     console.log("Upload result: ", uploadedImages);
-  
+
     if (!uploadedImages || uploadedImages.length === 0) {
       message.error("Image upload failed. Please try again.");
       return;
     }
-  
+
     if (!validateForm()) return;
-  
+
     const data = {
       title,
       subcategory: subCategory,
@@ -167,9 +153,16 @@ const AddProduct = ({ isOpen, onClose }) => {
       })),
       images: uploadedImages,
     };
-  
+
     try {
-      const response = await addProduct(data);
+      let response;
+      if (existingProduct) {
+        // Update product
+        response = await updateProduct(existingProduct._id, data);
+      } else {
+        // Add new product
+        response = await addProduct(data);
+      }
       message.success(response.message);
       resetFields();
       onClose();
@@ -177,13 +170,11 @@ const AddProduct = ({ isOpen, onClose }) => {
       message.error("Product adding failed. Please try again.");
     }
   };
-  
 
   const resetFields = () => {
     setTitle("");
     setSubCategory("");
     setDescription("");
-    setImages([]);
     setVariants([{ name: "", price: "", qty: 0 }]);
     setErrors({});
   };
@@ -199,7 +190,9 @@ const AddProduct = ({ isOpen, onClose }) => {
       maskStyle={false}
     >
       <div className="p-4 h-[41rem] overflow-y-auto">
-        <h1 className="text-2xl font-medium text-center mb-8">Add Product</h1>
+        <h1 className="text-2xl font-medium text-center mb-8">
+          {existingProduct ? "Update Product" : "Add Product"}
+        </h1>
 
         <div className="space-y-4">
           {/* Title */}
@@ -344,8 +337,8 @@ const AddProduct = ({ isOpen, onClose }) => {
             <label className="w-32 text-gray-400 text-base">Images :</label>
             <div className="w-full">
               <ImageUploader
-                setImages={setImages}
                 passHandleImageUpload={receiveHandleImageUpload}
+                previousImages={existingProduct.images}
               />
               {errors.images && (
                 <p className="text-red-500 text-sm mt-1">{errors.images}</p>
@@ -365,11 +358,11 @@ const AddProduct = ({ isOpen, onClose }) => {
             DISCARD
           </button>
           <button
-            type="button"
+            type="submit"
             onClick={handleSubmit}
             className="px-6 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
           >
-            ADD
+            {loading ? "Loading..." : existingProduct ? "UPDATE" : "ADD"}
           </button>
         </div>
       </div>

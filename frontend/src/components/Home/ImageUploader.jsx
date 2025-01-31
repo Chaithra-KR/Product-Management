@@ -3,6 +3,7 @@ import { Upload, Image, message, Button } from "antd";
 import ImgCrop from "antd-img-crop";
 import Icons from "../../../utils/Icons";
 import { uploadImages } from "../../../utils/axiosService";
+import baseUrl from "../../../utils/cryptUrl";
 
 const getBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -12,11 +13,24 @@ const getBase64 = (file) =>
     reader.onerror = (error) => reject(error);
   });
 
-const ImageUploader = ({passHandleImageUpload }) => {
+const ImageUploader = ({ passHandleImageUpload, previousImages = [] }) => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
-  const [fileList, setFileList] = useState([]);
-  const [storedImages, setStoredImages] = useState([]);
+  const [fileList, setFileList] = useState([]); // To store newly selected files
+  const [storedImages, setStoredImages] = useState([]); // To store uploaded images' data
+
+  // Set initial file list with previous images if editing
+  useEffect(() => {
+    if (previousImages && previousImages.length > 0) {
+      const initialFileList = previousImages.map((img) => ({
+        uid: img, // Unique identifier (usually URL or image id)
+        name: img, // Image name (you can modify this depending on your data structure)
+        status: 'done', // Status of file
+        url: `${baseUrl}/uploads/${img}`, // URL for preview
+      }));
+      setFileList(initialFileList);
+    }
+  }, [previousImages]);
 
   const handlePreview = async (file) => {
     if (!file.url && !file.preview) {
@@ -36,22 +50,22 @@ const ImageUploader = ({passHandleImageUpload }) => {
   const handleImageUpload = async () => {
     if (fileList.length === 0) {
       message.warning("No file selected.");
-      return [];  // Return empty array instead of null
+      return []; // Return empty array instead of null
     }
-  
+
     const formData = new FormData();
     fileList.forEach((file) => {
       if (file.originFileObj) {
         formData.append("images", file.originFileObj);
       }
     });
-  
+
     try {
       const res = await uploadImages(formData);
       if (res.success) {
         message.success("Images uploaded successfully!");
-        setStoredImages([...storedImages, ...res.data]); 
-        setFileList([]);
+        setStoredImages([...storedImages, ...res.data]);
+        setFileList([]); // Clear file list after upload
         return res.data; // Ensure this returns an array
       } else {
         message.error(res.message || "Upload failed.");
@@ -63,16 +77,13 @@ const ImageUploader = ({passHandleImageUpload }) => {
       return [];
     }
   };
-  
+
   useEffect(() => {
-    passHandleImageUpload(handleImageUpload);
+    passHandleImageUpload(handleImageUpload); // Pass handleImageUpload function to parent
   }, [passHandleImageUpload]);
 
   return (
     <div>
-      {/* <Button type="primary" onClick={handleImageUpload}>
-        Upload Images
-      </Button> */}
       <ImgCrop rotationSlider aspect={1 / 1}>
         <Upload
           listType="picture-card"
@@ -82,7 +93,7 @@ const ImageUploader = ({passHandleImageUpload }) => {
           maxCount={5}
           beforeUpload={(file) => {
             setFileList((prevList) => [...prevList, file]);
-            return false; 
+            return false; // Prevent automatic upload
           }}
         >
           {fileList.length >= 5 ? null : (
@@ -93,6 +104,7 @@ const ImageUploader = ({passHandleImageUpload }) => {
         </Upload>
       </ImgCrop>
 
+      {/* Preview for newly uploaded images */}
       {previewImage && (
         <Image
           wrapperStyle={{ display: "none" }}
