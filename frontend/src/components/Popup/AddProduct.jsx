@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Modal, message } from "antd";
 import Icons from "../../../utils/Icons";
 import ImageUploader from "../Home/ImageUploader";
-import { addProduct, getSubCategories, updateProduct } from "../../../utils/axiosService";
+import {
+  addProduct,
+  getSubCategories,
+  updateProduct,
+} from "../../../utils/axiosService";
 
 const AddProduct = ({ isOpen, onClose, existingProduct = null }) => {
   const [title, setTitle] = useState("");
@@ -111,7 +115,7 @@ const AddProduct = ({ isOpen, onClose, existingProduct = null }) => {
       setVariants(
         existingProduct.variants || [{ name: "", price: "", qty: 0 }]
       );
-      
+
       if (subCategoryOptions.length > 0) {
         const defaultSubCategory = subCategoryOptions.find(
           (category) => category.value === existingProduct.subcategory._id
@@ -123,8 +127,7 @@ const AddProduct = ({ isOpen, onClose, existingProduct = null }) => {
     } else {
       resetFields();
     }
-  }, [existingProduct, subCategoryOptions]); 
-  
+  }, [existingProduct, subCategoryOptions]);
 
   const handleSubmit = async () => {
     if (!handleImageUpload) {
@@ -338,7 +341,7 @@ const AddProduct = ({ isOpen, onClose, existingProduct = null }) => {
             <div className="w-full">
               <ImageUploader
                 passHandleImageUpload={receiveHandleImageUpload}
-                previousImages={existingProduct.images}
+                previousImages={existingProduct?.images}
               />
               {errors.images && (
                 <p className="text-red-500 text-sm mt-1">{errors.images}</p>

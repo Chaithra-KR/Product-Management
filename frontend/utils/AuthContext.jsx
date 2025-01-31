@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { checkAuthStatus } from "./axiosService";
+import { checkAuthStatus, getWishlist } from "./axiosService";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [wishlist, setWishlist] = useState([]);
 
   useEffect(() => {
     const fetchAuth = async () => {
@@ -15,8 +16,19 @@ export const AuthProvider = ({ children }) => {
     fetchAuth();
   }, []);
 
+  const fetchWishlist = async () => {
+    try {
+      const response = await getWishlist();
+      setWishlist(response.data || []);
+    } catch (error) {
+      console.error("Error fetching wishlist:", error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, setIsAuthenticated, wishlist, setWishlist, fetchWishlist }}
+    >
       {children}
     </AuthContext.Provider>
   );

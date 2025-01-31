@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from "react";
 import Icons from "../../../utils/Icons";
 import {
+  addWishlist,
+  checkIfInWishlist,
+  deleteFromWishlist,
   getFilteredProductsBySubcategory,
   getProducts,
 } from "../../../utils/axiosService";
 import { useNavigate } from "react-router-dom";
 import baseUrl from "../../../utils/cryptUrl";
+import { message } from "antd";
+import { useAuth } from "../../../utils/AuthContext";
 
 const Products = ({ searchTerm, selectedSubcategories }) => {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
+  const [wishlistStatus, setWishlistStatus] = useState({});
   const [pagination, setPagination] = useState({
     totalItems: 0,
     currentPage: 1,
@@ -17,26 +23,34 @@ const Products = ({ searchTerm, selectedSubcategories }) => {
     limit: 3,
   });
   const navigate = useNavigate();
+  const { fetchWishlist } = useAuth();
 
+  // Fetch products and wishlist status
   const fetchProducts = async (page = 1) => {
     setLoading(true);
     try {
       let response;
       if (selectedSubcategories.length > 0) {
-        // Fetch filtered products by subcategory
         response = await getFilteredProductsBySubcategory(
           selectedSubcategories,
           page,
           pagination.limit
         );
       } else {
-        // Fetch products based on search term (and pagination)
         response = await getProducts(searchTerm, page, pagination.limit);
       }
 
       if (response.success && response.data.length > 0) {
         setProducts(response.data);
         setPagination(response.pagination);
+
+        // Fetch wishlist status for each product
+        const wishlistStatuses = {};
+        for (const product of response.data) {
+          const wishlistResponse = await checkIfInWishlist(product._id);
+          wishlistStatuses[product._id] = wishlistResponse.isInWishlist;
+        }
+        setWishlistStatus(wishlistStatuses);
       } else {
         setProducts([]);
       }
@@ -51,39 +65,46 @@ const Products = ({ searchTerm, selectedSubcategories }) => {
     fetchProducts();
   }, [searchTerm, selectedSubcategories]);
 
-  const pageButtons = () => {
-    const totalPages = pagination.totalPages;
-    const currentPage = pagination.currentPage;
-    const maxVisiblePages = 5;
-    let pageNumbers = [];
+  // Toggle Wishlist Function
+  const toggleWishlist = async (productId) => {
+    try {
+      const isCurrentlyInWishlist = wishlistStatus[productId];
+      let response;
 
-    if (totalPages <= maxVisiblePages) {
-      //if pages count equal or less than maxVisiblePages, show all pages
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
+      if (isCurrentlyInWishlist) {
+        response = await deleteFromWishlist(productId);
+        if (response.success) {
+          setWishlistStatus((prev) => ({
+            ...prev,
+            [productId]: false,
+          }));
+          message.success("Removed from wishlist!");
+
+          // Fetch updated wishlist after removal
+          await fetchWishlist();
+        } else {
+          throw new Error(
+            response.message || "Failed to remove from wishlist."
+          );
+        }
+      } else {
+        response = await addWishlist({ productId });
+        if (response.success) {
+          setWishlistStatus((prev) => ({
+            ...prev,
+            [productId]: true,
+          }));
+          message.success("Added to wishlist!");
+
+          // Fetch updated wishlist after addition
+          await fetchWishlist();
+        } else {
+          throw new Error(response.message || "Failed to add to wishlist.");
+        }
       }
-    } else {
-      pageNumbers.push(1);
-
-      // Show pages near the current page
-      const start = Math.max(currentPage - 1, 2); // Start page (at least 2)
-      const end = Math.min(currentPage + 1, totalPages - 1); // End page (at most totalPages-1)
-
-      // Add pages around the current page
-      for (let i = start; i <= end; i++) {
-        pageNumbers.push(i);
-      }
-
-      // "..." before the last page
-      if (currentPage < totalPages - 2) {
-        pageNumbers.push("...");
-      }
-
-      // show the last page
-      pageNumbers.push(totalPages);
+    } catch (error) {
+      message.error(error.message || "An error occurred. Please try again.");
     }
-
-    return pageNumbers;
   };
 
   return (
@@ -97,14 +118,24 @@ const Products = ({ searchTerm, selectedSubcategories }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product, index) => (
+          {products.map((product) => (
             <div
-              key={index}
+              key={product._id}
               className="bg-white rounded-2xl border-2 border-gray-200 shadow p-4 relative"
             >
-              <button className="absolute top-5 right-6 p-1.5 bg-blue-100 text-blue-900 rounded-full hover:bg-blue-200 transition-colors">
-                <Icons path="heart" className="w-5 h-5 text-blue-900" />
+              {/* Wishlist Button */}
+              <button
+                onClick={() => toggleWishlist(product._id)}
+                className="absolute top-5 right-6 p-1.5 bg-blue-100 text-blue-900 rounded-full hover:bg-blue-200 transition-colors"
+              >
+                {wishlistStatus[product._id] ? (
+                  <Icons path="heart-filled" className="w-5 h-5 text-red-500" />
+                ) : (
+                  <Icons path="heart" className="w-5 h-5 text-blue-900" />
+                )}
               </button>
+
+              {/* Product Image */}
               <div className="mb-4">
                 <img
                   src={`${baseUrl}/uploads/${product.images[0]}`}
@@ -113,15 +144,21 @@ const Products = ({ searchTerm, selectedSubcategories }) => {
                   onClick={() => navigate(`/product/${product._id}`)}
                 />
               </div>
+
+              {/* Product Title */}
               <h3
                 onClick={() => navigate(`/product/${product._id}`)}
                 className="text-lg font-medium text-blue-900 mb-2 cursor-pointer"
               >
                 {product.title}
               </h3>
+
+              {/* Product Price */}
               <p className="text-gray-900 font-semibold">
                 ${product.variants[0].price}
               </p>
+
+              {/* Star Ratings (Placeholder) */}
               <div className="flex mt-2">
                 {Array(5)
                   .fill(null)
@@ -140,54 +177,6 @@ const Products = ({ searchTerm, selectedSubcategories }) => {
           ))}
         </div>
       )}
-
-      {/* Pagination */}
-
-      <div className="mt-8 h-20 flex items-center justify-between">
-        <p className="text-sm text-gray-600">{pagination.totalItems} items</p>
-        {!products.length === 0 ||
-          (pagination.totalPages > 1 && (
-            <div className="flex items-center space-x-2">
-              {pageButtons().map((item, index) =>
-                item === "..." ? (
-                  <span key={index} className="text-gray-600">
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={item}
-                    className={`w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 hover:text-gray-800 ${
-                      pagination.currentPage === item
-                        ? "bg-yellow-500 text-white"
-                        : ""
-                    }`}
-                    onClick={() => handlePageChange(item)}
-                  >
-                    {item}
-                  </button>
-                )
-              )}
-            </div>
-          ))}
-        <div>
-          <span>show</span>
-          <select
-            className="ml-4 px-2 py-1 border rounded-lg"
-            onChange={(e) => {
-              const newLimit = parseInt(e.target.value) * 3;
-              setPagination({
-                ...pagination,
-                limit: newLimit,
-              });
-              fetchProducts(1);
-            }}
-          >
-            <option value={10}>10 rows</option>
-            <option value={20}>20 rows</option>
-            <option value={50}>50 rows</option>
-          </select>
-        </div>
-      </div>
     </div>
   );
 };

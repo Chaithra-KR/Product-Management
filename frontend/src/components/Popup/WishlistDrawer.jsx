@@ -3,10 +3,12 @@ import Icons from "../../../utils/Icons";
 import { Drawer, message } from "antd";
 import { deleteFromWishlist, getWishlist } from "../../../utils/axiosService";
 import baseUrl from "../../../utils/cryptUrl";
+import { useAuth } from "../../../utils/AuthContext";
 
 const WishlistDrawer = ({ open, onClose, updateWishlistCount }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { fetchWishlist } = useAuth();
 
   const fetchProduct = async () => {
     setLoading(true);
@@ -25,7 +27,7 @@ const WishlistDrawer = ({ open, onClose, updateWishlistCount }) => {
 
   useEffect(() => {
     fetchProduct();
-  }, []);
+  }, [open]);
 
   const removeItem = async (id) => {
     let response = await deleteFromWishlist(id);

@@ -11,6 +11,7 @@ import {
 } from "../../../utils/axiosService";
 import baseUrl from "../../../utils/cryptUrl";
 import AddProduct from "../Popup/AddProduct";
+import { useAuth } from "../../../utils/AuthContext";
 
 const ProductDetails = () => {
   const [product, setProduct] = useState(null);
@@ -22,6 +23,7 @@ const ProductDetails = () => {
 
   const { id } = useParams();
   const navigate = useNavigate();
+  const { fetchWishlist } = useAuth();
 
   const showModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
@@ -60,6 +62,8 @@ const ProductDetails = () => {
         response = await deleteFromWishlist(productId);
         if (response.success) {
           setIsInWishlist((prev) => !prev);
+          // Fetch updated wishlist
+          await fetchWishlist();
           message.success("Removed from wishlist!");
         } else {
           throw new Error(
@@ -70,6 +74,8 @@ const ProductDetails = () => {
         response = await addWishlist({ productId });
         if (response.success) {
           setIsInWishlist((prev) => !prev);
+          // Fetch updated wishlist
+          await fetchWishlist();
           message.success("Added to wishlist!");
         } else {
           throw new Error(response.message || "Failed to add to wishlist.");
@@ -79,7 +85,6 @@ const ProductDetails = () => {
       message.error(error.message || "An error occurred. Please try again.");
     }
   };
-console.log(product,"product");
 
   return (
     <div className="flex flex-col md:flex-row gap-8">

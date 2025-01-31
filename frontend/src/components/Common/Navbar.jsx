@@ -1,11 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Icons from "../../../utils/Icons";
 import WishlistDrawer from "../Popup/WishlistDrawer";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../utils/AuthContext";
 
 const Navbar = ({ setSearchTerm }) => {
   const [isWishlistOpen, setWishlistOpen] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [searchInput, setSearchInput] = useState("");
+
+  const navigate = useNavigate();
+  const { fetchWishlist } = useAuth();
 
   const handleInputChange = (event) => {
     setSearchInput(event.target.value);
@@ -49,8 +54,14 @@ const Navbar = ({ setSearchTerm }) => {
               </span>
             </div>
           </button>
-          <button className="text-white hover:text-yellow-500 transition-colors duration-300">
-            Sign in
+          <button
+            className="text-white hover:text-yellow-500 transition-colors duration-300"
+            onClick={() => {
+              localStorage.removeItem("authUser");
+              navigate("/login");
+            }}
+          >
+            Sign out
           </button>
           <button className="flex items-center text-white hover:text-yellow-500 transition-colors duration-300">
             <div className="flex justify-between items-center">
